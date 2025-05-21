@@ -146,8 +146,8 @@ class Manual:
         return {"file_url": url, "file_name": self.output_file}
 
 
-        
-# print(Manual(np.array(Image.open("output/c9d8f572-7da1-4054-b906-6f1dd8e7bd17.png").convert("L").convert("RGB"))).zoom())
+if __name__ == '__main__':
+    print(Manual(np.array(Image.open("/Users/andrew/Documents/img6.png").convert("L").convert("RGB"))).zoom())
         
     
     
