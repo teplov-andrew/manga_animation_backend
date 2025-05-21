@@ -36,20 +36,14 @@ os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 app = FastAPI()
 
-
-
-device = torch.device("cpu")
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print("Using device: CUDA")
+else:
+    device = torch.device("cpu")
+    print("Using device: CPU")
+    
 print("Using device: CPU")
-# if torch.backends.mps.is_available():
-#     device = torch.device("mps")
-#     print("Using device: MPS")
-# elif torch.cuda.is_available():
-#     device = torch.device("cuda")
-#     print("Using device: CUDA")
-# else:
-#     device = torch.device("cpu")
-#     print("Using device: CPU")
-
 
 model = AutoModel.from_pretrained(
     "ragavsachdeva/magi",
@@ -116,7 +110,6 @@ async def crop_panels(file: UploadFile = File(...)):
 
 @app.post("/colorize/")
 async def colorize(file: UploadFile = File(...)):
-    # Read and save uploaded file
     contents = await file.read()
     
     try:
@@ -138,25 +131,6 @@ async def colorize(file: UploadFile = File(...)):
         encoded = base64.b64encode(img_file.read()).decode("utf-8")
 
     return JSONResponse({"colorized_image": encoded})
-
-# @app.post("/vidu_animate/")
-# async def vidu_animation(file: UploadFile = File(...), prompt: str = Form(...)):
-#     try:
-#         contents = await file.read()
-#         base64_file = base64.b64encode(contents).decode("utf-8")
-#         base64_uri = f"data:{file.content_type};base64,{base64_file}"
-#     except Exception as e:
-#         raise HTTPException(status_code=400, detail=f"Error reading file: {e}")
-
-#     try:
-#         result = await vidu_generate(base64_uri, prompt)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Animation generation failed: {e}")
-
-#     return JSONResponse(content=result)
-
-
-
 
 
 TASKS: dict[str, dict] = {}
@@ -189,8 +163,6 @@ def status(task_id: str):
     if not task:
         raise HTTPException(404, "Task not found")
     return {"status": task["status"], **({"result": task["result"]} if task["status"]=="done" else {})}
-
-
 
 
 @app.post("/wan_animate/")
