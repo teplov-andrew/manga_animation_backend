@@ -43,7 +43,6 @@ else:
     device = torch.device("cpu")
     print("Using device: CPU")
     
-print("Using device: CPU")
 
 model = AutoModel.from_pretrained(
     "ragavsachdeva/magi",
@@ -78,7 +77,6 @@ async def crop_panels(file: UploadFile = File(...)):
         results = model.predict_detections_and_associations([image_np])
     panel_bboxes = results[0]["panels"]  
     crops = processor.crop_image(image_np, panel_bboxes)
-    # print(crops)
     encoded_images = []
     for idx, crop_np in enumerate(crops):
         crop_img = Image.fromarray(crop_np)
@@ -93,34 +91,15 @@ async def crop_panels(file: UploadFile = File(...)):
         encoded_images.append(base64_str)
 
     return JSONResponse({"panel_crops": encoded_images})
-    
-    # images = {}
-    # for idx, crop_np in enumerate(crops, start=1):
-    #     filename = f"crop_{idx}_{str(uuid4())}.png"
-    #     path = os.path.join("", filename)
 
-    #     # 1) Сохранить в файл
-    #     Image.fromarray(crop_np).save(path, format='PNG')
-
-    #     try:
-    #         # 2) Загрузить, передав путь
-    #         url = load_file_s3(path, ContentType="image/png")
-    #     finally:
-    #         # 3) Удалить файл
-    #         os.remove(path)
-
-    #     images[f"img{idx}"] = url
-
-    # return JSONResponse(content=images)
 
 @app.post("/colorize/")
 async def colorize(file: UploadFile = File(...)):
     contents = await file.read()
-    
     try:
         input_img = Image.open(io.BytesIO(contents)).convert("RGB")
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid image format")
+        raise HTTPException(status_code=400, detail=str(e))
 
     uid = str(uuid4())
     input_path = OUTPUT_DIR / f"{uid}.png"
@@ -130,7 +109,7 @@ async def colorize(file: UploadFile = File(...)):
 
     colorized_path = input_path.with_stem(f"{input_path.stem}_colorized")
     if not colorized_path.exists():
-        raise HTTPException(status_code=500, detail="Colorization failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
     with open(colorized_path, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode("utf-8")
@@ -177,12 +156,12 @@ async def wan_animation(file: UploadFile = File(...), prompt: str = Form(...)):
         base64_file = base64.b64encode(contents).decode("utf-8")
         base64_uri = f"data:{file.content_type};base64,{base64_file}"
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error reading file: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
     try:
         result = await wan_generate(base64_uri, prompt)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Animation generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(content=result)
 
@@ -199,7 +178,7 @@ async def manual_reveal(file: UploadFile = File(...)):
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, manual.reveal)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during reveal: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(content=result)
 
@@ -216,7 +195,7 @@ async def manual_zoom(file: UploadFile = File(...)):
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, manual.zoom)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during zoom: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(content=result)
 
@@ -233,7 +212,7 @@ async def manual_shake(file: UploadFile = File(...)):
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, manual.shake)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during zoom: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return JSONResponse(content=result)
 
@@ -241,12 +220,12 @@ async def manual_shake(file: UploadFile = File(...)):
 @app.post("/create_anime/")
 async def create_anime_from_urls(file: UploadFile = File(...)):
     if file.content_type != "application/json":
-        raise HTTPException(status_code=400, detail="Нужен файл с типом application/json")
+        raise HTTPException(status_code=400)
     content = await file.read()
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Некорректный JSON")
+        raise HTTPException(status_code=400)
 
     videos = data["videos"]
     music = data["music"]
