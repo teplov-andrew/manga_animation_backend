@@ -1,7 +1,7 @@
 import asyncio
 import fal_client
 import json
-
+ 
 async def vidu_generate(base64_image, prompt):
     # base64 = path2base64URI(image_path)
     # url = fal_client.upload_file(image_path)

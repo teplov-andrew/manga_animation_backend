@@ -60,10 +60,7 @@ OUTPUT_DIR = Path("./output")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def read_imagefile(file_bytes: bytes) -> np.ndarray:
-    try:
-        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-    except Exception as e:
-        raise ValueError("Cannot parse image file") from e
+    img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
     return np.array(img)
 
 @app.post("/crop_panels/")

@@ -51,14 +51,7 @@ class Manual:
     
 
 
-    def zoom(
-        self,
-        duration: float = 3.0,
-        fps: int = 120,
-        start_scale: float = 0.7,
-        end_scale: float = 1.0,
-        upscale: int = 2,
-    ):
+    def zoom(self, duration: float = 3.0, fps: int = 120, start_scale: float = 0.7, end_scale: float = 1.0, upscale: int = 2):
         H, W = self.input_file.shape[:2]
         img_clip = ImageClip(self.input_file).set_duration(duration)
         def smootherstep(x: float) -> float:
@@ -74,11 +67,7 @@ class Manual:
             return ((W*upscale - w_new) / 2,
                     (H*upscale - h_new) / 2)
             
-        zoom_hi = (
-            img_clip
-            .resize(lambda t: scale(t) * upscale)
-            .set_position(position)
-        )
+        zoom_hi = (img_clip.resize(lambda t: scale(t) * upscale).set_position(position))
 
         bg_hi = ColorClip(size=(W*upscale, H*upscale), color=(255,255,255))\
                     .set_duration(duration)
@@ -98,14 +87,7 @@ class Manual:
         if w2 % 2 or h2 % 2:
             final = final.resize(((w2//2)*2, (h2//2)*2))
 
-        final.write_videofile(
-            self.output_file,
-            codec="libx264",
-            fps=fps,
-            audio=False,
-            preset="slow",
-            ffmpeg_params=["-pix_fmt", "yuv420p"]
-        )
+        final.write_videofile(self.output_file, codec="libx264", fps=fps, audio=False, preset="slow", ffmpeg_params=["-pix_fmt", "yuv420p"])
 
         url = load_file_s3(self.output_file)
         
@@ -114,13 +96,7 @@ class Manual:
         
         return {"file_url": url, "file_name": self.output_file}
     
-    def shake(
-        self,
-        duration: float = 3.0,
-        fps: int = 30,
-        max_angle: float = 1.0,
-        frequency: float = 1.0,
-    ):
+    def shake(self, duration: float = 3.0, fps: int = 30, max_angle: float = 1.0, frequency: float = 1.0):
 
         H, W = self.input_file.shape[:2]
         img_clip = ImageClip(self.input_file).set_duration(duration)

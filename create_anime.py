@@ -26,11 +26,10 @@ music_urls = [
     "https://storage.yandexcloud.net/manymated/music/track5.mp3",
     "https://storage.yandexcloud.net/manymated/music/track6.mp3"
 ]
+ 
 
-TRANSITION_DURATION = 0.25 
-CANVAS_WIDTH, CANVAS_HEIGHT = 1080, 1920 
 
-def _download_video(url: str) -> str:
+def download_video(url: str) -> str:
     response = requests.get(url, stream=True)
     response.raise_for_status()
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
@@ -40,7 +39,7 @@ def _download_video(url: str) -> str:
     tmp_file.close()
     return tmp_file.name
 
-def _download_audio(url: str) -> str:
+def download_audio(url: str) -> str:
     response = requests.get(url, stream=True)
     response.raise_for_status()
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
@@ -51,8 +50,8 @@ def _download_audio(url: str) -> str:
     return tmp_file.name
 
 
-def _add_background_music(clip: VideoFileClip, audio_url: str, volume: float = 1.0) -> VideoFileClip:
-    audio_path = _download_audio(audio_url)
+def add_background_music(clip: VideoFileClip, audio_url: str, volume: float = 1.0) -> VideoFileClip:
+    audio_path = download_audio(audio_url)
     base_audio = AudioFileClip(audio_path)
 
     if base_audio.duration < clip.duration - 1e-3:
@@ -68,8 +67,9 @@ def _scale_clip(clip: VideoFileClip, canvas_w: int, canvas_h: int, limit: float 
     scale = min(limit, canvas_w / clip.w, canvas_h / clip.h)
     return clip if scale == 1 else clip.resize(scale)
 
-def create_anime(urls: list[str], transition: float = TRANSITION_DURATION, music_url: str | None = None, music_volume: float = 1.0) -> dict:
-    raw_clips = [VideoFileClip(_download_video(u)) for u in urls]
+def create_anime(urls: list[str], transition: float = 0.25, music_url: str | None = None, music_volume: float = 1.0) -> dict:
+    CANVAS_WIDTH, CANVAS_HEIGHT = 1080, 1920 
+    raw_clips = [VideoFileClip(download_video(u)) for u in urls]
 
     overlap = max(0, len(raw_clips) - 1) * transition
     total_duration = sum(c.duration for c in raw_clips) - overlap
@@ -106,7 +106,7 @@ def create_anime(urls: list[str], transition: float = TRANSITION_DURATION, music
         elif direction == 'down':
             prev_pos = lambda t: ('center', CANVAS_HEIGHT * (t / transition))
             next_pos = lambda t: ('center', -CANVAS_HEIGHT + CANVAS_HEIGHT * (t / transition))
-        else:  # up
+        else: 
             prev_pos = lambda t: ('center', -CANVAS_HEIGHT * (t / transition))
             next_pos = lambda t: ('center', CANVAS_HEIGHT - CANVAS_HEIGHT * (t / transition))
 
@@ -124,7 +124,7 @@ def create_anime(urls: list[str], transition: float = TRANSITION_DURATION, music
     final = CompositeVideoClip([background, *layers], size=(CANVAS_WIDTH, CANVAS_HEIGHT))
     
     if music_url:
-        final = _add_background_music(final, music_url, music_volume)
+        final = add_background_music(final, music_url, music_volume)
 
     output_name = f'vertical_final_{uuid4()}.mp4'
     final.write_videofile(

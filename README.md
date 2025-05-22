@@ -11,4 +11,4 @@ SECRET_KEY="YOUR_KEY"
 BUCKET_NAME="YOUR_KEY"
 ```
 ## Загрузка дообученного чекпоинта для CogVideoX
-Для начала нужно склонировать [репозиторий CogVideoX](https://github.com/THUDM/CogVideo.git), после скачивай [чекпоинт]() и помещаем в папку `CogVideo/checkpoint`
+Для начала нужно склонировать [репозиторий CogVideoX](https://github.com/THUDM/CogVideo.git), после скачивай [чекпоинт](https://drive.google.com/file/d/1puQkkfIQLy1D3tn1rvCm6CLDoevOp76G/view?usp=sharing) и помещаем в папку `CogVideo/checkpoint`
