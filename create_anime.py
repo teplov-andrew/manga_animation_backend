@@ -1,14 +1,14 @@
 import os
 import tempfile
 import requests
+import math
 import random
 from uuid import uuid4
-from moviepy.editor import (
-    VideoFileClip,
-    CompositeVideoClip,
-    ColorClip,
-)
+from moviepy.editor import VideoFileClip, CompositeVideoClip, ColorClip, concatenate_audioclips
 from s3_save_file import load_file_s3
+
+from moviepy.audio.io.AudioFileClip import AudioFileClip
+from moviepy.audio.fx.audio_loop import audio_loop 
 
 video_urls = [
     "https://fal.media/files/lion/1Uh0DkBsAv2ZVPeV91OLd_output.mp4",
@@ -17,6 +17,16 @@ video_urls = [
     "https://fal.media/files/koala/JBd-FNUoK22Dj2glTlKBV_output.mp4"
     
 ]
+
+music_urls = [
+    "https://storage.yandexcloud.net/manymated/music/track1.mp3",
+    "https://storage.yandexcloud.net/manymated/music/track2.mp3",
+    "https://storage.yandexcloud.net/manymated/music/track3.mp3",
+    "https://storage.yandexcloud.net/manymated/music/track4.mp3",
+    "https://storage.yandexcloud.net/manymated/music/track5.mp3",
+    "https://storage.yandexcloud.net/manymated/music/track6.mp3"
+]
+
 TRANSITION_DURATION = 0.25 
 CANVAS_WIDTH, CANVAS_HEIGHT = 1080, 1920 
 
@@ -30,12 +40,35 @@ def _download_video(url: str) -> str:
     tmp_file.close()
     return tmp_file.name
 
+def _download_audio(url: str) -> str:
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+    for chunk in response.iter_content(8192):
+        if chunk:
+            tmp_file.write(chunk)
+    tmp_file.close()
+    return tmp_file.name
+
+
+def _add_background_music(clip: VideoFileClip, audio_url: str, volume: float = 1.0) -> VideoFileClip:
+    audio_path = _download_audio(audio_url)
+    base_audio = AudioFileClip(audio_path)
+
+    if base_audio.duration < clip.duration - 1e-3:
+        n = math.ceil(clip.duration / base_audio.duration)
+        bgm = concatenate_audioclips([base_audio] * n).subclip(0, clip.duration)
+    else:
+        bgm = base_audio.subclip(0, clip.duration)
+
+    bgm = bgm.volumex(volume).set_duration(clip.duration)
+    return clip.set_audio(bgm) 
 
 def _scale_clip(clip: VideoFileClip, canvas_w: int, canvas_h: int, limit: float = 1.5) -> VideoFileClip:
     scale = min(limit, canvas_w / clip.w, canvas_h / clip.h)
     return clip if scale == 1 else clip.resize(scale)
 
-def create_anime(urls: list[str], transition: float = TRANSITION_DURATION) -> dict:
+def create_anime(urls: list[str], transition: float = TRANSITION_DURATION, music_url: str | None = None, music_volume: float = 1.0) -> dict:
     raw_clips = [VideoFileClip(_download_video(u)) for u in urls]
 
     overlap = max(0, len(raw_clips) - 1) * transition
@@ -89,6 +122,9 @@ def create_anime(urls: list[str], transition: float = TRANSITION_DURATION) -> di
         current_t += clip.duration - transition
 
     final = CompositeVideoClip([background, *layers], size=(CANVAS_WIDTH, CANVAS_HEIGHT))
+    
+    if music_url:
+        final = _add_background_music(final, music_url, music_volume)
 
     output_name = f'vertical_final_{uuid4()}.mp4'
     final.write_videofile(
@@ -111,4 +147,4 @@ def create_anime(urls: list[str], transition: float = TRANSITION_DURATION) -> di
 
 
 if __name__ == '__main__':
-    print(create_anime(video_urls))
+    print(create_anime(video_urls, music_url=music_urls[0]))

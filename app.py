@@ -61,7 +61,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def read_imagefile(file_bytes: bytes) -> np.ndarray:
     try:
-        img = Image.open(io.BytesIO(file_bytes)).convert("L").convert("RGB")
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
     except Exception as e:
         raise ValueError("Cannot parse image file") from e
     return np.array(img)
@@ -82,6 +82,11 @@ async def crop_panels(file: UploadFile = File(...)):
     encoded_images = []
     for idx, crop_np in enumerate(crops):
         crop_img = Image.fromarray(crop_np)
+        
+        # filename = f"crop_{idx}_{str(uuid4())}.png"
+        # path = os.path.join("", filename)
+        # crop_img.save(path, format='PNG')
+        
         buf = io.BytesIO()
         crop_img.save(buf, format="PNG")
         base64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
@@ -244,5 +249,6 @@ async def create_anime_from_urls(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Некорректный JSON")
 
     videos = data["videos"]
-    result = create_anime(videos)
+    music = data["music"]
+    result = create_anime(videos, music_url=music)
     return JSONResponse(content=result)
