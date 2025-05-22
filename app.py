@@ -7,6 +7,7 @@ import asyncio
 import json
 import tempfile
 import fal_client
+import shutil
 
 
 from fastapi.responses import StreamingResponse
@@ -25,8 +26,8 @@ from manual_creation import Manual
 from create_anime import create_anime
 
 from dotenv import load_dotenv
-import os
 from s3_save_file import load_file_s3
+from ai_models.cogvideox_run import cogvideox_generate
 
 load_dotenv()
 api_key = os.getenv("FAL_KEY")
@@ -80,10 +81,6 @@ async def crop_panels(file: UploadFile = File(...)):
     encoded_images = []
     for idx, crop_np in enumerate(crops):
         crop_img = Image.fromarray(crop_np)
-        
-        # filename = f"crop_{idx}_{str(uuid4())}.png"
-        # path = os.path.join("", filename)
-        # crop_img.save(path, format='PNG')
         
         buf = io.BytesIO()
         crop_img.save(buf, format="PNG")
@@ -165,6 +162,23 @@ async def wan_animation(file: UploadFile = File(...), prompt: str = Form(...)):
 
     return JSONResponse(content=result)
 
+@app.post("/cogvideox_animate/")
+async def cogvideox_animation(file: UploadFile = File(...), prompt: str = Form(...)):
+    tmp_path = f"/tmp/{uuid4()}{os.path.splitext(file.filename)[1] or ".png"}"
+    try:
+        with open(tmp_path, "wb") as out:
+            shutil.copyfileobj(file.file, out)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Cannot save upload: {e}")
+
+    try:
+        result = cogvideox_generate(prompt=prompt, image_or_video_path=tmp_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+    return JSONResponse(content=result)
 
 
 @app.post("/manual_reveal/")
@@ -224,10 +238,8 @@ async def create_anime_from_urls(file: UploadFile = File(...)):
     if file.content_type != "application/json":
         raise HTTPException(status_code=400)
     content = await file.read()
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400)
+    
+    data = json.loads(content)
 
     videos = data["videos"]
     music = data["music"]
