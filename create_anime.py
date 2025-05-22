@@ -127,13 +127,7 @@ def create_anime(urls: list[str], transition: float = 0.25, music_url: str | Non
         final = add_background_music(final, music_url, music_volume)
 
     output_name = f'vertical_final_{uuid4()}.mp4'
-    final.write_videofile(
-        output_name,
-        codec='libx264',
-        preset='slow',
-        ffmpeg_params=['-crf', '18'],
-        audio_codec='aac',
-    )
+    final.write_videofile(output_name, codec='libx264', preset='slow', ffmpeg_params=['-crf', '18'], audio_codec='aac')
 
     url = load_file_s3(output_name)
 
