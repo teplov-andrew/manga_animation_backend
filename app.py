@@ -66,10 +66,7 @@ def read_imagefile(file_bytes: bytes) -> np.ndarray:
 @app.post("/crop_panels/")
 async def crop_panels(file: UploadFile = File(...)):
     contents = await file.read()
-    try:
-        image_np = read_imagefile(contents)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    image_np = read_imagefile(contents)
 
     with torch.no_grad():
         results = model.predict_detections_and_associations([image_np])
@@ -90,10 +87,7 @@ async def crop_panels(file: UploadFile = File(...)):
 @app.post("/colorize/")
 async def colorize(file: UploadFile = File(...)):
     contents = await file.read()
-    try:
-        input_img = Image.open(io.BytesIO(contents)).convert("RGB")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    input_img = Image.open(io.BytesIO(contents)).convert("RGB")
 
     uid = str(uuid4())
     input_path = OUTPUT_DIR / f"{uid}.png"
@@ -145,12 +139,9 @@ def status(task_id: str):
 
 @app.post("/wan_animate/")
 async def wan_animation(file: UploadFile = File(...), prompt: str = Form(...)):
-    try:
-        contents = await file.read()
-        base64_file = base64.b64encode(contents).decode("utf-8")
-        base64_uri = f"data:{file.content_type};base64,{base64_file}"
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    contents = await file.read()
+    base64_file = base64.b64encode(contents).decode("utf-8")
+    base64_uri = f"data:{file.content_type};base64,{base64_file}"
 
     try:
         result = await wan_generate(base64_uri, prompt)
@@ -166,7 +157,7 @@ async def cogvideox_animation(file: UploadFile = File(...), prompt: str = Form(.
         with open(tmp_path, "wb") as out:
             shutil.copyfileobj(file.file, out)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Cannot save upload: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
 
     try:
         result = cogvideox_generate(prompt=prompt, image_or_video_path=tmp_path)
@@ -181,10 +172,7 @@ async def cogvideox_animation(file: UploadFile = File(...), prompt: str = Form(.
 @app.post("/manual_reveal/")
 async def manual_reveal(file: UploadFile = File(...)):
     contents = await file.read()
-    try:
-        image_np = read_imagefile(contents)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    image_np = read_imagefile(contents)
 
     try:
         manual = Manual(image_np)
@@ -198,10 +186,7 @@ async def manual_reveal(file: UploadFile = File(...)):
 @app.post("/manual_zoom/")
 async def manual_zoom(file: UploadFile = File(...)):
     contents = await file.read()
-    try:
-        image_np = read_imagefile(contents)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    image_np = read_imagefile(contents)
 
     try:
         manual = Manual(image_np)
@@ -215,10 +200,7 @@ async def manual_zoom(file: UploadFile = File(...)):
 @app.post("/manual_shake/")
 async def manual_shake(file: UploadFile = File(...)):
     contents = await file.read()
-    try:
-        image_np = read_imagefile(contents)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    image_np = read_imagefile(contents)
 
     try:
         manual = Manual(image_np)
