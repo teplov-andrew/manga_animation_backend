@@ -5,12 +5,9 @@ from uuid import uuid4
 import base64
 import asyncio
 import json
-import tempfile
 import fal_client
 import shutil
 
-
-from fastapi.responses import StreamingResponse
 import numpy as np
 from PIL import Image
 import torch
@@ -73,7 +70,7 @@ async def crop_panels(file: UploadFile = File(...)):
     panel_bboxes = results[0]["panels"]  
     crops = processor.crop_image(image_np, panel_bboxes)
     encoded_images = []
-    for idx, crop_np in enumerate(crops):
+    for i, crop_np in enumerate(crops):
         crop_img = Image.fromarray(crop_np)
         
         buf = io.BytesIO()
