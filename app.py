@@ -165,6 +165,8 @@ async def wan_animation(file: UploadFile = File(...), prompt: str = Form(...)):
 
     return JSONResponse(content=result)
 
+
+
 @app.post("/manual_reveal/")
 async def manual_reveal(file: UploadFile = File(...)):
     contents = await file.read()
