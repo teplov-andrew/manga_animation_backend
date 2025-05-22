@@ -1,1 +1,12 @@
 # manga_animation_backend
+
+## Донастройка до полного репозиторий
+Для того чтобы работал эндпоинт `/colorize/`, нужно создать папку `colorizer` и поместить в нее содержимое [данного репозитория](https://github.com/qweasdd/manga-colorization-v2), также скачать веса моделей про которые подробно описано в README [данного репозитория](https://github.com/qweasdd/manga-colorization-v2).
+
+Также нужно создать файл `.env`, в который нужно поместить данные в таком формате:
+```
+FAL_KEY="YOUR_KEY"
+ACCESS_KEY="YOUR_KEY"
+SECRET_KEY="YOUR_KEY"
+BUCKET_NAME="YOUR_KEY"
+```
